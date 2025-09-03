@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas BKO I9 - Sistema de Gestão de Notas</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-store"></i>
+                    <h1>Notas BKO I9</h1>
+                </div>
+                <nav class="nav">
+                    <ul class="nav-list">
+                        <li><a href="#dashboard" class="nav-link active" data-section="dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a></li>
+                        <li><a href="#lojas" class="nav-link" data-section="lojas">
+                            <i class="fas fa-store"></i> Lojas
+                        </a></li>
+                        <li><a href="#notas" class="nav-link" data-section="notas">
+                            <i class="fas fa-sticky-note"></i> Notas
+                        </a></li>
+                        <li><a href="#lembretes" class="nav-link" data-section="lembretes">
+                            <i class="fas fa-bell"></i> Lembretes
+                        </a></li>
+                    </ul>
+                </nav>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="btnNovoItem">
+                        <i class="fas fa-plus"></i> Novo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <div class="section-header">
+                    <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                    <p>Visão geral do sistema</p>
+                </div>
+                
+                <!-- Cards de Resumo -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalLojas">0</h3>
+                            <p>Total de Lojas</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalCategorias">0</h3>
+                            <p>Categorias Criadas</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="notasPendentes">0</h3>
+                            <p>Notas Pendentes</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="lembretesProximos">0</h3>
+                            <p>Lembretes Próximos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Atividades Recentes -->
+                <div class="dashboard-content">
+                    <div class="dashboard-section">
+                        <h3><i class="fas fa-history"></i> Atividades Recentes</h3>
+                        <div class="activity-list" id="atividadesRecentes">
+                            <!-- Conteúdo carregado via JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-section">
+                        <h3><i class="fas fa-chart-pie"></i> Distribuição de Notas</h3>
+                        <div class="chart-container" id="chartContainer">
+                            <!-- Gráfico será inserido aqui -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Lojas Section -->
+            <section id="lojas" class="section">
+                <div class="section-header">
+                    <h2><i class="fas fa-store"></i> Gestão de Lojas</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" id="btnNovaLoja">
+                            <i class="fas fa-plus"></i> Nova Loja
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="search-bar">
+                    <input type="text" id="searchLojas" placeholder="Buscar lojas..." class="search-input">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+                
+                <div class="content-grid" id="lojasGrid">
+                    <!-- Lojas serão carregadas via JavaScript -->
+                </div>
+            </section>
+
+            <!-- Notes Section -->
+            <section id="notes-section" class="section">
+                <div class="section-header">
+                    <div>
+                        <h2><i class="fas fa-sticky-note"></i> Gerenciar Notas</h2>
+                        <p>Organize suas anotações por loja e categoria</p>
+                    </div>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" onclick="NoteManager.showCreateModal()">
+                            <i class="fas fa-plus"></i> Nova Nota
+                        </button>
+                        <button class="btn btn-secondary" onclick="NoteManager.clearFilters()">
+                            <i class="fas fa-filter"></i> Limpar Filtros
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="notes-search" class="search-input" placeholder="Buscar notas por título ou conteúdo...">
+                </div>
+                
+                <div class="filters mb-2 flex gap-2">
+                    <select id="notes-status-filter" class="filter-select">
+                        <option value="">Todos os status</option>
+                        <option value="PENDENTE">Pendente</option>
+                        <option value="EM_ANDAMENTO">Em Andamento</option>
+                        <option value="CONCLUIDO">Concluído</option>
+                    </select>
+                    <select id="store-filter" class="filter-select">
+                        <option value="">Todas as lojas</option>
+                    </select>
+                    <select id="category-filter" class="filter-select">
+                        <option value="">Todas as categorias</option>
+                    </select>
+                </div>
+                
+                <div id="notes-list" class="content-list">
+                    <!-- Notes will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Reminders Section -->
+            <section id="reminders-section" class="section">
+                <div class="section-header">
+                    <div>
+                        <h2><i class="fas fa-bell"></i> Lembretes</h2>
+                        <p>Gerencie seus lembretes e pendências</p>
+                    </div>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" onclick="ReminderManager.showCreateModal()">
+                            <i class="fas fa-plus"></i> Novo Lembrete
+                        </button>
+                        <button class="btn btn-secondary" onclick="ReminderManager.clearFilters()">
+                            <i class="fas fa-filter"></i> Limpar Filtros
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="reminders-search" class="search-input" placeholder="Buscar lembretes por título ou descrição...">
+                </div>
+                
+                <div class="filters mb-2 flex gap-2">
+                    <select id="reminders-status-filter" class="filter-select">
+                        <option value="all">Todos os lembretes</option>
+                        <option value="active">Ativos</option>
+                        <option value="inactive">Inativos</option>
+                        <option value="upcoming">Próximos (24h)</option>
+                        <option value="overdue">Atrasados</option>
+                    </select>
+                    <select id="note-filter" class="filter-select">
+                        <option value="">Todas as notas</option>
+                    </select>
+                </div>
+                
+                <div id="reminders-list" class="content-list">
+                    <!-- Reminders will be loaded here -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal Container -->
+    <div id="modalContainer" class="modal-overlay">
+        <!-- Modais serão inseridos aqui via JavaScript -->
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Carregando...</p>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Modals -->
+    <!-- Store Modal -->
+    <div id="store-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="store-modal-title" class="modal-title">
+                    <i class="fas fa-store"></i> Nova Loja
+                </h2>
+            </div>
+            <div class="modal-content">
+                <form id="store-form">
+                    <input type="hidden" id="store-id">
+                    <div class="form-group">
+                        <label for="store-nome" class="form-label">Nome *</label>
+                        <input type="text" id="store-nome" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="store-descricao" class="form-label">Descrição</label>
+                        <textarea id="store-descricao" class="form-textarea"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="store-endereco" class="form-label">Endereço</label>
+                        <input type="text" id="store-endereco" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="store-telefone" class="form-label">Telefone</label>
+                        <input type="tel" id="store-telefone" class="form-input">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                <button type="submit" form="store-form" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div id="note-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="note-modal-title" class="modal-title">
+                    <i class="fas fa-sticky-note"></i> Nova Nota
+                </h2>
+            </div>
+            <div class="modal-content">
+                <form id="note-form">
+                    <input type="hidden" id="note-id">
+                    <div class="form-group">
+                        <label for="note-titulo" class="form-label">Título *</label>
+                        <input type="text" id="note-titulo" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-data" class="form-label">Data *</label>
+                        <input type="date" id="note-data" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-loja" class="form-label">Loja *</label>
+                        <select id="note-loja" class="form-select" required>
+                            <option value="">Selecione uma loja</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-categoria" class="form-label">Categoria *</label>
+                        <select id="note-categoria" class="form-select" required>
+                            <option value="">Selecione uma categoria</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-status" class="form-label">Status *</label>
+                        <select id="note-status" class="form-select" required>
+                            <option value="PENDENTE">Pendente</option>
+                            <option value="EM_ANDAMENTO">Em Andamento</option>
+                            <option value="CONCLUIDO">Concluído</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-anotacoes" class="form-label">Anotações</label>
+                        <textarea id="note-anotacoes" class="form-textarea" rows="4"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                <button type="submit" form="note-form" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder Modal -->
+    <div id="reminder-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="reminder-modal-title" class="modal-title">
+                    <i class="fas fa-bell"></i> Novo Lembrete
+                </h2>
+            </div>
+            <div class="modal-content">
+                <form id="reminder-form">
+                    <input type="hidden" id="reminder-id">
+                    <div class="form-group">
+                        <label for="reminder-titulo" class="form-label">Título *</label>
+                        <input type="text" id="reminder-titulo" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reminder-descricao" class="form-label">Descrição</label>
+                        <textarea id="reminder-descricao" class="form-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="reminder-data-hora" class="form-label">Data e Hora *</label>
+                        <input type="datetime-local" id="reminder-data-hora" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reminder-nota" class="form-label">Nota *</label>
+                        <select id="reminder-nota" class="form-select" required>
+                            <option value="">Selecione uma nota</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="reminder-ativo" checked> Ativo
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                <button type="submit" form="reminder-form" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminders List Modal -->
+    <div id="reminders-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-bell"></i> Lembretes da Nota
+                </h2>
+            </div>
+            <div class="modal-content">
+                <div class="mb-2">
+                    <button class="btn btn-primary" onclick="ReminderManager.createForNote(AppState.currentNote)">
+                        <i class="fas fa-plus"></i> Novo Lembrete
+                    </button>
+                </div>
+                <div id="reminders-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/notes.js"></script>
+    <script src="js/reminders.js"></script>
+</body>
+</html>
