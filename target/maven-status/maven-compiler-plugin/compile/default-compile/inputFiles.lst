@@ -4,8 +4,11 @@ C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\entity\C
 C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\controller\CategoriaController.java
 C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\controller\NotaController.java
 C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\entity\Loja.java
+C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\controller\ContatoController.java
 C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\repository\LojaRepository.java
+C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\repository\ContatoRepository.java
 C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\entity\Lembrete.java
+C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\entity\Contato.java
 C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\repository\CategoriaRepository.java
 C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\entity\Nota.java
 C:\Users\Usuário\Documents\novo\notas-bko-I9\src\main\java\com\notasbko\NotasBkoApplication.java

@@ -13,6 +13,170 @@ const AppState = {
     currentNote: null
 };
 
+// Contact Manager
+const ContactManager = {
+    async loadStoreContacts(storeId) {
+        try {
+            const contacts = await API.getContactsByStore(storeId);
+            this.renderStoreContacts(contacts);
+        } catch (error) {
+            console.error('Erro ao carregar contatos da loja:', error);
+            this.renderStoreContacts([]);
+        }
+    },
+
+    renderStoreContacts(contacts) {
+        const contactsListEl = document.getElementById('contatosLojaList');
+        if (!contactsListEl) return;
+        
+        if (contacts.length === 0) {
+            contactsListEl.innerHTML = '<p class="text-muted">Nenhum funcionário cadastrado para esta loja</p>';
+            return;
+        }
+        
+        contactsListEl.innerHTML = contacts.map(contact => `
+            <div class="contact-item">
+                <div class="contact-header">
+                    <div class="contact-info">
+                        <span class="contact-name">${Utils.escapeHtml(contact.nome)}</span>
+                        <span class="contact-matricula" style="font-size: 0.85em; color: #666; margin-left: 8px;">Mat: ${contact.matricula}</span>
+                        <span class="contact-cargo cargo-${contact.cargo.toLowerCase()}">${this.formatCargo(contact.cargo)}</span>
+                    </div>
+                    <div class="contact-actions">
+                        <button class="btn-icon" onclick="ContactManager.editContact(${contact.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-danger" onclick="ContactManager.deleteContact(${contact.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="contact-details">
+                    ${contact.telefone ? `<span class="contact-phone"><i class="fas fa-phone"></i> ${contact.telefone}</span>` : ''}
+                    ${contact.email ? `<span class="contact-email"><i class="fas fa-envelope"></i> ${contact.email}</span>` : ''}
+                </div>
+                ${contact.observacoes ? `<div class="contact-notes">${Utils.escapeHtml(contact.observacoes)}</div>` : ''}
+            </div>
+        `).join('');
+    },
+
+    formatCargo(cargo) {
+        const cargos = {
+            'GERENTE': 'Gerente',
+            'PROPRIETARIO': 'Proprietário',
+            'VENDEDOR': 'Vendedor'
+        };
+        return cargos[cargo] || cargo;
+    },
+
+    showAddContactModal(storeId) {
+        document.getElementById('contact-form').reset();
+        document.getElementById('contact-loja-id').value = storeId;
+        document.getElementById('contact-modal-title').textContent = 'Novo Funcionário';
+        document.getElementById('contact-id').value = '';
+        Modal.show('contact-modal');
+    },
+
+    validateMatricula(matricula) {
+        const pattern = /^T\d{7}$/;
+        return pattern.test(matricula);
+    },
+
+    async saveContact() {
+        const matricula = document.getElementById('contact-matricula').value;
+        const matriculaError = document.getElementById('matricula-error');
+        
+        // Validar matrícula
+        if (!this.validateMatricula(matricula)) {
+            matriculaError.style.display = 'block';
+            return;
+        } else {
+            matriculaError.style.display = 'none';
+        }
+        
+        const contactData = {
+            nome: document.getElementById('contact-nome').value,
+            matricula: matricula,
+            cargo: document.getElementById('contact-cargo').value,
+            telefone: document.getElementById('contact-telefone').value,
+            email: document.getElementById('contact-email').value,
+            observacoes: document.getElementById('contact-observacoes').value,
+            loja: {
+                id: document.getElementById('contact-loja-id').value
+            }
+        };
+        
+        const contactId = document.getElementById('contact-id').value;
+        
+        try {
+            Loading.show();
+            
+            if (contactId) {
+                contactData.id = contactId;
+                await API.updateContact(contactData);
+                Toast.show('Funcionário atualizado com sucesso!');
+            } else {
+                await API.createContact(contactData);
+                Toast.show('Funcionário adicionado com sucesso!');
+            }
+            
+            Modal.hide('contact-modal');
+            
+            // Recarregar contatos da loja atual
+            if (AppState.currentStore) {
+                await this.loadStoreContacts(AppState.currentStore.id);
+            }
+            
+        } catch (error) {
+            console.error('Error saving contact:', error);
+            Toast.show('Erro ao salvar funcionário', 'error');
+        } finally {
+            Loading.hide();
+        }
+    },
+
+    async editContact(contactId) {
+        try {
+            const contact = await API.getContact(contactId);
+            document.getElementById('contact-nome').value = contact.nome;
+            document.getElementById('contact-matricula').value = contact.matricula || '';
+            document.getElementById('contact-cargo').value = contact.cargo;
+            document.getElementById('contact-telefone').value = contact.telefone || '';
+            document.getElementById('contact-email').value = contact.email || '';
+            document.getElementById('contact-observacoes').value = contact.observacoes || '';
+            document.getElementById('contact-loja-id').value = contact.lojaId;
+            document.getElementById('contact-id').value = contact.id;
+            document.getElementById('contact-modal-title').textContent = 'Editar Funcionário';
+            Modal.show('contact-modal');
+        } catch (error) {
+            console.error('Error loading contact:', error);
+            Toast.show('Erro ao carregar dados do funcionário', 'error');
+        }
+    },
+
+    async deleteContact(contactId) {
+        if (!confirm('Tem certeza que deseja excluir este funcionário?')) {
+            return;
+        }
+        
+        try {
+            Loading.show();
+            await API.deleteContact(contactId);
+            Toast.show('Funcionário excluído com sucesso!');
+            
+            // Recarregar contatos da loja atual
+            if (AppState.currentStore) {
+                await this.loadStoreContacts(AppState.currentStore.id);
+            }
+        } catch (error) {
+            console.error('Error deleting contact:', error);
+            Toast.show('Erro ao excluir funcionário', 'error');
+        } finally {
+            Loading.hide();
+        }
+    }
+};
+
 // Utilitários
 const Utils = {
     // Formatação de data
@@ -268,6 +432,39 @@ const API = {
         });
     },
 
+    // Contacts
+    async getContacts() {
+        return this.request('/contatos');
+    },
+
+    async getContactsByStore(storeId) {
+        return this.request(`/contatos/loja/${storeId}`);
+    },
+
+    async getContact(id) {
+        return this.request(`/contatos/${id}`);
+    },
+
+    async createContact(contact) {
+        return this.request('/contatos', {
+            method: 'POST',
+            body: JSON.stringify(contact)
+        });
+    },
+
+    async updateContact(contact) {
+        return this.request(`/contatos/${contact.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(contact)
+        });
+    },
+
+    async deleteContact(id) {
+        return this.request(`/contatos/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
     // Dashboard
     async getDashboardSummary() {
         return this.request('/dashboard/resumo');
@@ -304,18 +501,29 @@ const Navigation = {
             section.classList.remove('active');
         });
 
-        // Mostrar seção selecionada
-        let targetSection;
-        if (sectionName === 'stores') {
-            targetSection = document.getElementById('stores-section');
-        } else if (sectionName === 'notes') {
-            targetSection = document.getElementById('notes-section');
-        } else if (sectionName === 'reminders') {
-            targetSection = document.getElementById('reminders-section');
-        } else {
-            targetSection = document.getElementById(`${sectionName}-section`);
+        // Mapear nomes de seção para IDs corretos
+        let sectionId;
+        switch(sectionName) {
+            case 'dashboard':
+                sectionId = 'dashboard';
+                break;
+            case 'stores':
+            case 'lojas':
+                sectionId = 'lojas';
+                break;
+            case 'notes':
+            case 'notas':
+                sectionId = 'notas';
+                break;
+            case 'reminders':
+            case 'lembretes':
+                sectionId = 'lembretes';
+                break;
+            default:
+                sectionId = sectionName;
         }
         
+        const targetSection = document.getElementById(sectionId);
         if (targetSection) {
             targetSection.classList.add('active');
         }
@@ -344,18 +552,25 @@ const Navigation = {
                     await Dashboard.load();
                     break;
                 case 'stores':
+                case 'lojas':
                     await StoreManager.load();
                     break;
                 case 'notes':
+                case 'notas':
                     if (typeof NoteManager !== 'undefined') {
                         await NoteManager.load();
                         NoteManager.setupFilters();
+                    } else {
+                        console.log('NoteManager não está disponível');
                     }
                     break;
                 case 'reminders':
+                case 'lembretes':
                     if (typeof ReminderManager !== 'undefined') {
                         await ReminderManager.load();
                         ReminderManager.setupFilters();
+                    } else {
+                        console.log('ReminderManager não está disponível');
                     }
                     break;
             }
@@ -417,11 +632,11 @@ const Dashboard = {
     },
 
     renderRecentActivities(activities) {
-        const container = document.getElementById('recent-activities');
+        const container = document.getElementById('atividadesRecentes');
         if (!container) return;
 
-        const notasRecentes = activities.notasRecentes || [];
-        const lembretesProximos = activities.lembretesProximos || [];
+        const notasRecentes = activities.ultimasNotas || [];
+        const lembretesProximos = activities.proximosLembretes || [];
 
         container.innerHTML = `
             <div class="activity-section">
@@ -465,43 +680,7 @@ const StoreManager = {
     },
 
     render() {
-        const container = document.getElementById('stores-list');
-        if (!container) return;
-
-        if (AppState.stores.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted">Nenhuma loja cadastrada</p>';
-            return;
-        }
-
-        container.innerHTML = AppState.stores.map(store => `
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">${store.nome}</h3>
-                        <p class="card-subtitle">${store.endereco || ''}</p>
-                    </div>
-                    <div class="card-actions">
-                        <button class="btn btn-outline" onclick="StoreManager.edit(${store.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-primary" onclick="StoreManager.delete(${store.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <p>${store.descricao || 'Sem descrição'}</p>
-                </div>
-                <div class="card-footer">
-                    <span class="text-small text-muted">
-                        <i class="fas fa-phone"></i> ${store.telefone || 'Não informado'}
-                    </span>
-                    <span class="text-small text-muted">
-                        Criada em ${Utils.formatDate(store.dataCriacao)}
-                    </span>
-                </div>
-            </div>
-        `).join('');
+        this.renderStores(AppState.stores);
     },
 
     showCreateModal() {
@@ -579,6 +758,278 @@ const StoreManager = {
         } finally {
             Loading.hide();
         }
+    },
+
+    selectStore(storeId) {
+        // Remove seleção anterior
+        document.querySelectorAll('.store-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Adiciona seleção atual
+        const selectedCard = document.querySelector(`[data-store-id="${storeId}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
+        }
+        
+        const store = AppState.stores.find(s => s.id === storeId);
+        if (store) {
+            AppState.currentStore = store;
+            this.showStoreDetails(store);
+            this.loadStoreNotes(storeId);
+            ContactManager.loadStoreContacts(storeId);
+            
+            // Mostrar botões de ação
+            const btnAddNota = document.getElementById('btnAddNotaLoja');
+            const btnAddContato = document.getElementById('btnAddContatoLoja');
+            if (btnAddNota) btnAddNota.style.display = 'inline-block';
+            if (btnAddContato) btnAddContato.style.display = 'inline-block';
+        }
+    },
+
+    showStoreDetails(store) {
+        const detailsContainer = document.getElementById('store-details');
+        if (!detailsContainer) return;
+        
+        detailsContainer.innerHTML = `
+            <div class="store-details-header">
+                <h3>${Utils.escapeHtml(store.nome)}</h3>
+                <button class="btn btn-primary" onclick="StoreManager.showAddNoteModal(${store.id})">
+                    <i class="fas fa-plus"></i> Adicionar Nota
+                </button>
+            </div>
+            <div class="store-info">
+                <div class="store-info-item">
+                    <strong><i class="fas fa-map-marker-alt"></i> Endereço:</strong>
+                    <span>${Utils.escapeHtml(store.endereco)}</span>
+                </div>
+                ${store.telefone ? `
+                    <div class="store-info-item">
+                        <strong><i class="fas fa-phone"></i> Telefone:</strong>
+                        <span>${Utils.escapeHtml(store.telefone)}</span>
+                    </div>
+                ` : ''}
+                ${store.descricao ? `
+                    <div class="store-info-item">
+                        <strong><i class="fas fa-info-circle"></i> Descrição:</strong>
+                        <span>${Utils.escapeHtml(store.descricao)}</span>
+                    </div>
+                ` : ''}
+            </div>
+            <div id="store-notes-container">
+                <h4>Notas da Loja</h4>
+                <div id="store-notes-list"></div>
+            </div>
+        `;
+        
+        detailsContainer.style.display = 'block';
+    },
+
+    async loadStoreNotes(storeId) {
+        try {
+            const notes = await API.getNotesByStore(storeId);
+            this.renderStoreNotes(notes);
+        } catch (error) {
+            console.error('Erro ao carregar notas da loja:', error);
+            this.renderStoreNotes([]);
+        }
+    },
+
+    renderStoreNotes(notes) {
+        const notesListEl = document.getElementById('notasLojaList');
+        if (!notesListEl) return;
+        
+        if (notes.length === 0) {
+            notesListEl.innerHTML = '<p class="text-muted">Nenhuma nota encontrada para esta loja</p>';
+            return;
+        }
+        
+        notesListEl.innerHTML = notes.map(note => `
+            <div class="store-note-item">
+                <div class="note-header">
+                    <span class="note-title">${Utils.escapeHtml(note.titulo)}</span>
+                    <span class="note-date">${Utils.formatDateTime(note.dataCriacao)}</span>
+                    <div class="note-actions">
+                        <button class="btn-icon" onclick="StoreManager.editStoreNote(${note.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-danger" onclick="StoreManager.deleteStoreNote(${note.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="note-content">${Utils.escapeHtml(note.conteudo)}</div>
+                <div class="note-status">
+                    <span class="status-badge status-${note.status.toLowerCase()}">
+                        ${Utils.formatStatus(note.status)}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    showAddNoteModal(storeId) {
+        document.getElementById('note-form').reset();
+        document.getElementById('note-loja-id').value = storeId;
+        document.getElementById('note-modal-title').textContent = 'Nova Nota para Loja';
+        document.getElementById('note-id').value = '';
+        Modal.show('note-modal');
+    },
+
+    async saveStoreNote() {
+        const form = document.getElementById('note-form');
+        const formData = new FormData(form);
+        
+        const lojaId = document.getElementById('note-loja-id').value;
+        
+        try {
+            Loading.show();
+            
+            // Buscar categorias da loja para pegar a categoria padrão
+            const categorias = await API.getCategoriesByStore(lojaId);
+            if (categorias.length === 0) {
+                Toast.show('Nenhuma categoria encontrada para esta loja', 'error');
+                return;
+            }
+            
+            const noteData = {
+                titulo: document.getElementById('note-titulo').value,
+                anotacoes: document.getElementById('note-conteudo').value,
+                status: document.getElementById('note-status').value,
+                categoriaId: categorias[0].id // Usar a primeira categoria (padrão)
+            };
+            
+            const noteId = document.getElementById('note-id').value;
+            
+            if (noteId) {
+                noteData.id = noteId;
+                await API.updateNote(noteId, noteData);
+                Toast.show('Nota atualizada com sucesso!');
+            } else {
+                await API.createNote(noteData);
+                Toast.show('Nota criada com sucesso!');
+            }
+            
+            Modal.hide('note-modal');
+            
+            // Recarregar notas da loja atual
+            if (AppState.currentStore) {
+                await this.loadStoreNotes(AppState.currentStore.id);
+            }
+            
+        } catch (error) {
+            console.error('Error saving note:', error);
+            Toast.show('Erro ao salvar nota', 'error');
+        } finally {
+            Loading.hide();
+        }
+    },
+
+    async editStoreNote(noteId) {
+        try {
+            const note = await API.getNote(noteId);
+            document.getElementById('note-titulo').value = note.titulo;
+            document.getElementById('note-conteudo').value = note.conteudo;
+            document.getElementById('note-status').value = note.status;
+            document.getElementById('note-loja-id').value = note.lojaId;
+            document.getElementById('note-id').value = note.id;
+            document.getElementById('note-modal-title').textContent = 'Editar Nota';
+            Modal.show('note-modal');
+        } catch (error) {
+            console.error('Error loading note:', error);
+            Toast.show('Erro ao carregar nota', 'error');
+        }
+    },
+
+    async deleteStoreNote(noteId) {
+        if (!confirm('Tem certeza que deseja excluir esta nota?')) {
+            return;
+        }
+
+        try {
+            Loading.show();
+            await API.deleteNote(noteId);
+            Toast.show('Nota excluída com sucesso!');
+            
+            // Recarregar notas da loja atual
+            if (AppState.currentStore) {
+                await this.loadStoreNotes(AppState.currentStore.id);
+            }
+        } catch (error) {
+            console.error('Error deleting note:', error);
+            Toast.show('Erro ao excluir nota', 'error');
+        } finally {
+            Loading.hide();
+        }
+    },
+
+    search(query) {
+        if (!AppState.stores) {
+            return;
+        }
+
+        const filteredStores = query.trim() === '' 
+            ? AppState.stores 
+            : AppState.stores.filter(store => 
+                store.nome.toLowerCase().includes(query.toLowerCase()) ||
+                store.endereco.toLowerCase().includes(query.toLowerCase()) ||
+                (store.descricao && store.descricao.toLowerCase().includes(query.toLowerCase()))
+            );
+
+        this.renderStores(filteredStores);
+    },
+
+    renderStores(stores) {
+        const container = document.getElementById('lojasGrid');
+        if (!container) return;
+
+        if (!stores || stores.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-store"></i>
+                    <h3>Nenhuma loja encontrada</h3>
+                    <p>Não há lojas cadastradas ou que correspondam à sua busca.</p>
+                    <button class="btn btn-primary" onclick="StoreManager.showCreateModal()">
+                        <i class="fas fa-plus"></i> Nova Loja
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = stores.map(store => `
+            <div class="loja-card" onclick="StoreManager.selectStore(${store.id})" data-store-id="${store.id}">
+                <div class="store-card-header">
+                    <h4 class="store-name">${Utils.escapeHtml(store.nome)}</h4>
+                    <div class="store-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); StoreManager.edit(${store.id})" title="Editar">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); StoreManager.delete(${store.id})" title="Excluir">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </div>
+                </div>
+                <div class="store-card-content">
+                    <div class="store-info">
+                        <p><i class="fas fa-map-marker-alt"></i> ${Utils.escapeHtml(store.endereco)}</p>
+                        <p><i class="fas fa-phone"></i> ${store.telefone || 'Não informado'}</p>
+                        <p><i class="fas fa-envelope"></i> ${store.email || 'Não informado'}</p>
+                    </div>
+                    ${store.descricao ? `
+                        <div class="store-description">
+                            <p>${Utils.escapeHtml(store.descricao)}</p>
+                        </div>
+                    ` : ''}
+                    <div class="store-details">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar"></i>
+                            Criada em ${Utils.formatDate(store.dataCriacao)}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `).join('');
     }
 };
 
@@ -592,6 +1043,9 @@ const App = {
             // Configurar event listeners
             this.setupEventListeners();
             
+            // Configurar navegação do sidebar
+            this.setupSidebarNavigation();
+            
             // Carregar dashboard inicial
             await Navigation.loadSectionData('dashboard');
             
@@ -602,12 +1056,70 @@ const App = {
         }
     },
 
+    setupSidebarNavigation() {
+        // Configurar navegação do sidebar
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active de todos os links
+                document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+                // Adiciona active ao link clicado
+                this.classList.add('active');
+                
+                const section = this.getAttribute('data-section');
+                if (section) {
+                    Navigation.showSection(section);
+                }
+            });
+        });
+        
+        // Configurar navegação do header (se existir)
+        document.querySelectorAll('.header .nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const section = this.getAttribute('data-section');
+                if (section) {
+                    Navigation.showSection(section);
+                }
+            });
+        });
+    },
+
     setupEventListeners() {
         // Botão Novo Item
         const btnNovoItem = document.getElementById('btnNovoItem');
         if (btnNovoItem) {
             btnNovoItem.addEventListener('click', () => {
                 this.handleNovoItem();
+            });
+        }
+
+        // Botão Nova Loja
+        const btnNovaLoja = document.getElementById('btnNovaLoja');
+        if (btnNovaLoja) {
+            btnNovaLoja.addEventListener('click', () => {
+                StoreManager.showCreateModal();
+            });
+        }
+
+        // Busca de lojas
+        const searchLojas = document.getElementById('searchLojas');
+        if (searchLojas) {
+            searchLojas.addEventListener('input', Utils.debounce((e) => {
+                StoreManager.search(e.target.value);
+            }, 300));
+        }
+
+        // Botão Nova Nota da Loja
+        const btnAddNotaLoja = document.getElementById('btnAddNotaLoja');
+        if (btnAddNotaLoja) {
+            btnAddNotaLoja.addEventListener('click', () => {
+                if (AppState.currentStore) {
+                    StoreManager.showAddNoteModal(AppState.currentStore.id);
+                } else {
+                    Toast.show('Selecione uma loja primeiro', 'warning');
+                }
             });
         }
 
@@ -633,6 +1145,36 @@ const App = {
             storeForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 StoreManager.save();
+            });
+        }
+
+        // Note form
+        const noteForm = document.getElementById('note-form');
+        if (noteForm) {
+            noteForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                StoreManager.saveStoreNote();
+            });
+        }
+
+        // Contact form
+        const contactForm = document.getElementById('contact-form');
+        if (contactForm) {
+            contactForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                ContactManager.saveContact();
+            });
+        }
+
+        // Add contact button
+        const btnAddContato = document.getElementById('btnAddContatoLoja');
+        if (btnAddContato) {
+            btnAddContato.addEventListener('click', () => {
+                if (AppState.currentStore) {
+                    ContactManager.showAddContactModal(AppState.currentStore.id);
+                } else {
+                    Toast.show('Selecione uma loja primeiro', 'warning');
+                }
             });
         }
 
@@ -669,8 +1211,12 @@ const App = {
                 Modal.show('store-modal');
                 break;
             case 'notas':
-                // Implementar modal de nova nota
-                Toast.show('Funcionalidade de nova nota em desenvolvimento', 'info');
+                // Abrir modal de nova nota
+                if (window.NoteManager) {
+                    NoteManager.showCreateModal();
+                } else {
+                    Toast.show('Gerenciador de notas não carregado', 'error');
+                }
                 break;
             case 'lembretes':
                 // Implementar modal de novo lembrete
@@ -717,7 +1263,31 @@ const App = {
 // Inicializar quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
+    
+    // Adicionar validação em tempo real para o campo de matrícula
+    const matriculaInput = document.getElementById('contact-matricula');
+    if (matriculaInput) {
+        matriculaInput.addEventListener('input', function() {
+            const matricula = this.value.toUpperCase();
+            this.value = matricula;
+            
+            const matriculaError = document.getElementById('matricula-error');
+            if (matricula && !StoreManager.validateMatricula(matricula)) {
+                matriculaError.style.display = 'block';
+            } else {
+                matriculaError.style.display = 'none';
+            }
+        });
+    }
 });
+
+// Adicionar função de escape HTML aos Utils
+Utils.escapeHtml = function(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+};
 
 // Expor funções globais necessárias
 window.StoreManager = StoreManager;
@@ -728,3 +1298,4 @@ window.Dashboard = Dashboard;
 window.API = API;
 window.Utils = Utils;
 window.AppState = AppState;
+window.NoteManager = window.NoteManager || null;

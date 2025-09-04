@@ -10,42 +10,45 @@
 <body>
     <!-- Header -->
     <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-store"></i>
-                    <h1>Notas BKO I9</h1>
-                </div>
-                <nav class="nav">
-                    <ul class="nav-list">
-                        <li><a href="#dashboard" class="nav-link active" data-section="dashboard">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a></li>
-                        <li><a href="#lojas" class="nav-link" data-section="lojas">
-                            <i class="fas fa-store"></i> Lojas
-                        </a></li>
-                        <li><a href="#notas" class="nav-link" data-section="notas">
-                            <i class="fas fa-sticky-note"></i> Notas
-                        </a></li>
-                        <li><a href="#lembretes" class="nav-link" data-section="lembretes">
-                            <i class="fas fa-bell"></i> Lembretes
-                        </a></li>
-                    </ul>
-                </nav>
-                <div class="header-actions">
-                    <button class="btn btn-primary" id="btnNovoItem">
-                        <i class="fas fa-plus"></i> Novo
-                    </button>
-                </div>
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Notas BKO I9</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="btnNovoItem">
+                    <i class="fas fa-plus"></i> Novo
+                </button>
             </div>
         </div>
     </header>
 
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-link active" data-section="dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-link" data-section="lojas">
+                <i class="fas fa-store"></i>
+                <span>Lojas</span>
+            </a>
+            <a href="#" class="nav-link" data-section="notas">
+                <i class="fas fa-sticky-note"></i>
+                <span>Notas Gerais</span>
+            </a>
+            <a href="#" class="nav-link" data-section="lembretes">
+                <i class="fas fa-bell"></i>
+                <span>Lembretes</span>
+            </a>
+        </nav>
+    </aside>
+
     <!-- Main Content -->
-    <main class="main">
-        <div class="container">
-            <!-- Dashboard Section -->
-            <section id="dashboard" class="section active">
+    <main class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
                 <div class="section-header">
                     <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
                     <p>Visão geral do sistema</p>
@@ -91,6 +94,29 @@
                     </div>
                 </div>
 
+                <!-- Ações Rápidas -->
+                <div class="quick-actions">
+                    <h3><i class="fas fa-bolt"></i> Ações Rápidas</h3>
+                    <div class="quick-actions-grid">
+                        <button class="quick-action-btn" onclick="Navigation.showSection('lojas'); StoreManager.showCreateModal();">
+                            <i class="fas fa-store"></i>
+                            <span>Nova Loja</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="Navigation.showSection('notas'); if(window.NoteManager) NoteManager.showCreateModal();">
+                            <i class="fas fa-sticky-note"></i>
+                            <span>Nova Nota</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="Navigation.showSection('lembretes');">
+                            <i class="fas fa-bell"></i>
+                            <span>Novo Lembrete</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="Navigation.showSection('lojas');">
+                            <i class="fas fa-search"></i>
+                            <span>Buscar Lojas</span>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Atividades Recentes -->
                 <div class="dashboard-content">
                     <div class="dashboard-section">
@@ -125,13 +151,47 @@
                     <i class="fas fa-search search-icon"></i>
                 </div>
                 
-                <div class="content-grid" id="lojasGrid">
-                    <!-- Lojas serão carregadas via JavaScript -->
+                <div class="lojas-layout">
+                    <div class="lojas-list" id="lojasGrid">
+                        <!-- Lista de lojas será carregada via JavaScript -->
+                    </div>
+                    
+                    <div class="loja-details" id="lojaDetails">
+                        <div class="loja-details-header">
+                            <h3 id="lojaDetailsTitle">Selecione uma loja</h3>
+                            <button class="btn btn-secondary" id="btnAddNotaLoja" style="display: none;">
+                                <i class="fas fa-plus"></i> Nova Nota
+                            </button>
+                        </div>
+                        
+                        <div class="loja-info" id="lojaInfo" style="display: none;">
+                            <!-- Informações da loja selecionada -->
+                        </div>
+                        
+                        <div class="loja-contatos" id="lojaContatos">
+                            <div class="contatos-header">
+                                <h4><i class="fas fa-users"></i> Funcionários</h4>
+                                <button class="btn btn-sm btn-primary" id="btnAddContatoLoja" style="display: none;">
+                                    <i class="fas fa-user-plus"></i> Adicionar Funcionário
+                                </button>
+                            </div>
+                            <div class="contatos-list" id="contatosLojaList">
+                                <p class="text-muted">Selecione uma loja para ver os funcionários</p>
+                            </div>
+                        </div>
+                        
+                        <div class="loja-notas" id="lojaNotas">
+                            <h4><i class="fas fa-sticky-note"></i> Notas da Loja</h4>
+                            <div class="notas-list" id="notasLojaList">
+                                <p class="text-muted">Selecione uma loja para ver suas notas</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Notes Section -->
-            <section id="notes-section" class="section">
+            <section id="notas" class="section">
                 <div class="section-header">
                     <div>
                         <h2><i class="fas fa-sticky-note"></i> Gerenciar Notas</h2>
@@ -173,7 +233,7 @@
             </section>
 
             <!-- Reminders Section -->
-            <section id="reminders-section" class="section">
+            <section id="lembretes" class="section">
                 <div class="section-header">
                     <div>
                         <h2><i class="fas fa-bell"></i> Lembretes</h2>
@@ -211,7 +271,6 @@
                     <!-- Reminders will be loaded here -->
                 </div>
             </section>
-        </div>
     </main>
 
     <!-- Modal Container -->
@@ -280,21 +339,10 @@
                         <label for="note-titulo" class="form-label">Título *</label>
                         <input type="text" id="note-titulo" class="form-input" required>
                     </div>
+                    <input type="hidden" id="note-loja-id">
                     <div class="form-group">
-                        <label for="note-data" class="form-label">Data *</label>
-                        <input type="date" id="note-data" class="form-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="note-loja" class="form-label">Loja *</label>
-                        <select id="note-loja" class="form-select" required>
-                            <option value="">Selecione uma loja</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="note-categoria" class="form-label">Categoria *</label>
-                        <select id="note-categoria" class="form-select" required>
-                            <option value="">Selecione uma categoria</option>
-                        </select>
+                        <label for="note-conteudo" class="form-label">Conteúdo *</label>
+                        <textarea id="note-conteudo" class="form-textarea" rows="4" required></textarea>
                     </div>
                     <div class="form-group">
                         <label for="note-status" class="form-label">Status *</label>
@@ -304,10 +352,7 @@
                             <option value="CONCLUIDO">Concluído</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label for="note-anotacoes" class="form-label">Anotações</label>
-                        <textarea id="note-anotacoes" class="form-textarea" rows="4"></textarea>
-                    </div>
+
                 </form>
             </div>
             <div class="modal-footer">
@@ -356,6 +401,57 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
                 <button type="submit" form="reminder-form" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Modal -->
+    <div id="contact-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="contact-modal-title" class="modal-title">
+                    <i class="fas fa-user"></i> Novo Funcionário
+                </h2>
+            </div>
+            <div class="modal-content">
+                <form id="contact-form">
+                    <input type="hidden" id="contact-id">
+                    <input type="hidden" id="contact-loja-id">
+                    <div class="form-group">
+                        <label for="contact-nome" class="form-label">Nome *</label>
+                        <input type="text" id="contact-nome" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-matricula" class="form-label">Matrícula *</label>
+                        <input type="text" id="contact-matricula" class="form-input" required placeholder="T1234567" maxlength="8">
+                        <div id="matricula-error" class="error-message" style="display: none; color: #dc3545; font-size: 0.875em; margin-top: 0.25rem;">Digite uma matrícula válida</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-cargo" class="form-label">Cargo *</label>
+                        <select id="contact-cargo" class="form-select" required>
+                            <option value="">Selecione um cargo</option>
+                            <option value="GERENTE">Gerente</option>
+                            <option value="PROPRIETARIO">Proprietário</option>
+                            <option value="VENDEDOR">Vendedor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-telefone" class="form-label">Telefone</label>
+                        <input type="tel" id="contact-telefone" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email" class="form-label">Email</label>
+                        <input type="email" id="contact-email" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-observacoes" class="form-label">Observações</label>
+                        <textarea id="contact-observacoes" class="form-textarea" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Cancelar</button>
+                <button type="submit" form="contact-form" class="btn btn-primary">Salvar</button>
             </div>
         </div>
     </div>
